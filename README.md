@@ -5,13 +5,20 @@
 ![Module](https://img.shields.io/badge/Type-Terraform_Module-informational)
 ![Status](https://img.shields.io/badge/Status-Complete-brightgreen)
 
-A reusable Terraform module that provisions a standardized AWS VPC with configurable public and private subnets across multiple Availability Zones. Call it once for dev, once for prod â€” same network topology, different parameters, zero duplication.
+A reusable Terraform module that provisions a standardized AWS VPC with configurable public and private subnets across multiple Availability Zones. Call it once for dev, once for prod — same network topology, different parameters, zero duplication.
 
 > ### Deployed and verified
 >
-> The `examples/simple-vpc/` example was applied to AWS to verify the module produces clean, correct infrastructure. 7 resources created from a single module call (VPC, IGW, 2 public subnets across 2 AZs, route table, 2 associations). Includes a bug fix where `zipmap` was guarded against empty `*_subnet_cidrs` lists â€” a footgun discovered during this validation pass.
+> The `examples/simple-vpc/` example was applied to AWS to verify the module produces clean, correct infrastructure. 7 resources created from a single module call (VPC, IGW, 2 public subnets across 2 AZs, route table, 2 associations). Includes a bug fix where `zipmap` was guarded against empty `*_subnet_cidrs` lists — a footgun discovered during this validation pass.
 >
-> **Module design notes, deployment output, reuse example:** [`evidence/`](evidence/)
+> **Module design notes, deployment output, reuse example:** [`Documentation/`](Documentation/)
+
+## Repository Tour
+
+- **[`modules/vpc/`](modules/vpc/)** — the reusable module itself (the main artifact)
+- **[`examples/simple-vpc/`](examples/simple-vpc/)** — single-environment consumer
+- **[`examples/prod-dev/`](examples/prod-dev/)** — calling the module twice for two environments
+- **[`Documentation/`](Documentation/)** — deployment output + design notes
 
 ## The Problem
 
@@ -21,21 +28,23 @@ This is the platform engineering mindset applied to infrastructure: **build the 
 
 ## Module Structure
 
+
+
 ```
 terraform-aws-vpc-module/
-â”œâ”€â”€ modules/
-â”‚   â””â”€â”€ vpc/
-â”‚       â”œâ”€â”€ main.tf          # Resource definitions
-â”‚       â”œâ”€â”€ variables.tf     # Input parameters
-â”‚       â”œâ”€â”€ outputs.tf       # Exported values
-â”‚       â””â”€â”€ README.md        # Module-level docs
-â”œâ”€â”€ examples/
-â”‚   â”œâ”€â”€ simple-vpc/
-â”‚   â”‚   â””â”€â”€ main.tf          # Basic single-environment usage
-â”‚   â””â”€â”€ prod-dev/
-â”‚       â””â”€â”€ main.tf          # Calling the module twice: prod + dev
-â”œâ”€â”€ README.md                # This file
-â””â”€â”€ .gitignore
++-- modules/
+|   +-- vpc/
+|       +-- main.tf          # Resource definitions
+|       +-- variables.tf     # Input parameters
+|       +-- outputs.tf       # Exported values
+|       +-- README.md        # Module-level docs
++-- examples/
+|   +-- simple-vpc/
+|   |   +-- main.tf          # Basic single-environment usage
+|   +-- prod-dev/
+|       +-- main.tf          # Calling the module twice: prod + dev
++-- README.md                # This file
++-- .gitignore
 ```
 
 ## Usage
@@ -78,9 +87,9 @@ module "dev_vpc" {
 
 | Name | Type | Default | Required | Description |
 |------|------|---------|----------|-------------|
-| `name` | `string` | â€” | yes | Environment name, used in resource tags and names |
-| `cidr_block` | `string` | â€” | yes | CIDR block for the VPC |
-| `availability_zones` | `list(string)` | â€” | yes | List of AZs to create subnets in |
+| `name` | `string` | — | yes | Environment name, used in resource tags and names |
+| `cidr_block` | `string` | — | yes | CIDR block for the VPC |
+| `availability_zones` | `list(string)` | — | yes | List of AZs to create subnets in |
 | `public_subnet_cidrs` | `list(string)` | `[]` | no | CIDR blocks for public subnets (one per AZ) |
 | `private_subnet_cidrs` | `list(string)` | `[]` | no | CIDR blocks for private subnets (one per AZ) |
 | `enable_nat_gateway` | `bool` | `false` | no | Create a NAT Gateway for private subnet egress |
@@ -101,18 +110,18 @@ module "dev_vpc" {
 
 ## Examples
 
-### Simple VPC â€” [`examples/simple-vpc/`](examples/simple-vpc/)
+### Simple VPC — [`examples/simple-vpc/`](examples/simple-vpc/)
 
 Single VPC with public subnets only. Good for a lab or single-tier application.
 
-### Prod + Dev â€” [`examples/prod-dev/`](examples/prod-dev/)
+### Prod + Dev — [`examples/prod-dev/`](examples/prod-dev/)
 
 Calls the module twice with different parameters to demonstrate configuration consistency across environments. Prod gets NAT Gateway; dev doesn't. Same topology, different cost profile.
 
 ## Design Decisions
 
 **Why `for_each` on subnets, not `count`?**  
-`count` produces subnet resources indexed by number (`aws_subnet.public[0]`). If you remove the first AZ, Terraform wants to destroy `[0]` and rename `[1]` to `[0]` â€” causing unnecessary recreation. `for_each` uses stable keys (the AZ name), so removing one AZ only removes that AZ's subnet.
+`count` produces subnet resources indexed by number (`aws_subnet.public[0]`). If you remove the first AZ, Terraform wants to destroy `[0]` and rename `[1]` to `[0]` — causing unnecessary recreation. `for_each` uses stable keys (the AZ name), so removing one AZ only removes that AZ's subnet.
 
 **Why optional NAT Gateway?**  
 NAT Gateway costs ~$32/month. Dev environments often don't need private subnet egress. Making it optional lets you save cost where you don't need isolation without creating a separate module definition.
@@ -129,13 +138,13 @@ Splitting into vpc-module, public-subnet-module, private-subnet-module is premat
 
 ## What I Learned
 
-- The difference between `count` and `for_each` in Terraform isn't just style â€” it's about stable resource addressing. `for_each` with meaningful keys prevents Terraform from destroying and recreating resources when list order changes
-- A module's `outputs.tf` is its API contract. If a caller needs a value, it must be in outputs â€” internal resource attributes aren't accessible from outside the module
-- The `//` in a module source path (`github.com/user/repo//modules/vpc`) is the Terraform convention for "subdirectory within this repo" â€” it's not a typo
+- The difference between `count` and `for_each` in Terraform isn't just style — it's about stable resource addressing. `for_each` with meaningful keys prevents Terraform from destroying and recreating resources when list order changes
+- A module's `outputs.tf` is its API contract. If a caller needs a value, it must be in outputs — internal resource attributes aren't accessible from outside the module
+- The `//` in a module source path (`github.com/user/repo//modules/vpc`) is the Terraform convention for "subdirectory within this repo" — it's not a typo
 - Writing a module for internal use taught me what "good module design" actually means: minimize required variables, maximize flexibility through optional ones, export everything a caller might need
 
 ## Related Projects
 
 This module is used in:
-- [aws-ha-web-app](https://github.com/SalamoneJack/aws-ha-web-app) â€” HA application on top of this VPC pattern
-- [aws-multi-vpc-hub-spoke](https://github.com/SalamoneJack/aws-multi-vpc-hub-spoke) â€” Hub-and-spoke with multiple instances of this module
+- [aws-ha-web-app](https://github.com/SalamoneJack/aws-ha-web-app) — HA application on top of this VPC pattern
+- [aws-multi-vpc-hub-spoke](https://github.com/SalamoneJack/aws-multi-vpc-hub-spoke) — Hub-and-spoke with multiple instances of this module
