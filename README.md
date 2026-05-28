@@ -26,6 +26,12 @@ Copy-pasting VPC Terraform across environments is how configuration drift happen
 
 This is the platform engineering mindset applied to infrastructure: **build the tool once, use it everywhere.**
 
+## Architecture
+
+The module composes a VPC, optional public/private subnets per AZ, optional NAT Gateway, and optional Flow Logs into a single reusable unit. Subnets are keyed by AZ name via `for_each` (avoiding the classic `count`-induced index-shift recreation footgun), and `zipmap` is guarded against empty subnet lists.
+
+See **[`Documentation/architecture.md`](Documentation/architecture.md)** for the rendered Mermaid diagram showing the module's internal resource composition, how callers consume it across environments, and the key design decisions (`for_each` vs `count`, `zipmap` guard, optional NAT/Flow Logs).
+
 ## Module Structure
 
 
