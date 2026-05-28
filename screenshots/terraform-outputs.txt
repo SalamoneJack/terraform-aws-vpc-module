@@ -1,0 +1,5 @@
+public_subnet_ids = [
+  "subnet-0fe4469faeee2bf41",
+  "subnet-076cf9eef9e2a89f6",
+]
+vpc_id = "vpc-06912d18aee4849bd"

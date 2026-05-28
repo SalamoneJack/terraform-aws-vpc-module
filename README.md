@@ -7,6 +7,12 @@
 
 A reusable Terraform module that provisions a standardized AWS VPC with configurable public and private subnets across multiple Availability Zones. Call it once for dev, once for prod — same network topology, different parameters, zero duplication.
 
+> ### Deployed and verified
+>
+> The `examples/simple-vpc/` example was applied to AWS to verify the module produces clean, correct infrastructure. 7 resources created from a single module call (VPC, IGW, 2 public subnets across 2 AZs, route table, 2 associations). Includes a bug fix where `zipmap` was guarded against empty `*_subnet_cidrs` lists — a footgun discovered during this validation pass.
+>
+> **Module design notes, deployment output, reuse example:** [`screenshots/`](screenshots/)
+
 ## The Problem
 
 Copy-pasting VPC Terraform across environments is how configuration drift happens. By the time you have prod, dev, and staging, you have three slightly different VPC definitions that are each right in isolation but collectively inconsistent. Reusable modules solve this: one tested definition, called with different inputs.
