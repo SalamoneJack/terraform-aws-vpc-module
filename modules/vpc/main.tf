@@ -1,7 +1,7 @@
 locals {
   # Build stable maps from AZ → CIDR for for_each (avoids index-shift recreation)
-  public_subnets  = zipmap(var.availability_zones, var.public_subnet_cidrs)
-  private_subnets = zipmap(var.availability_zones, var.private_subnet_cidrs)
+  public_subnets  = length(var.public_subnet_cidrs) > 0 ? zipmap(var.availability_zones, var.public_subnet_cidrs) : {}
+  private_subnets = length(var.private_subnet_cidrs) > 0 ? zipmap(var.availability_zones, var.private_subnet_cidrs) : {}
 
   common_tags = merge(var.tags, {
     ManagedBy   = "terraform"
